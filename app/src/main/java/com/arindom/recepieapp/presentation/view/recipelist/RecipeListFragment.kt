@@ -62,7 +62,7 @@ class RecipeListFragment : Fragment() {
                     RecipeAppTheme(application.isDarkTheme.value) {
                         val recipes = viewModel.recipes.value
                         val scaffoldState = rememberScaffoldState()
-
+                        val page = viewModel.page.value
                         Scaffold(
                             modifier = Modifier
                                 .background(MaterialTheme.colors.background),
@@ -108,14 +108,18 @@ class RecipeListFragment : Fragment() {
                                     modifier = Modifier
                                         .fillMaxWidth()
                                 ) {
-                                    if (viewModel.loading.value) {
+                                    if (viewModel.loading.value && recipes.isEmpty()) {
                                         LoadingRecipeListShimmer(imageHeight = 300.dp)
                                     } else {
                                         LazyColumn(modifier = Modifier.padding(horizontal = 16.dp)) {
-                                            items(recipes) { item ->
+                                            itemsIndexed(recipes) { index, item ->
+                                                viewModel.onChangeRecipeScrollPosition(index)
+                                                if ((index + 1) >= (page * PAGE_SIZE) && !viewModel.loading.value) {
+                                                    viewModel.nextPage()
+                                                }
+
                                                 RecipeCard(recipe = item, onClick = {
                                                     lifecycleScope.launch {
-
                                                         snackbarController.getScope()
                                                             .launch {
                                                                 snackbarController.showSnackbar(
@@ -124,13 +128,13 @@ class RecipeListFragment : Fragment() {
                                                                     actionLabel = "Hide",
                                                                 )
                                                             }
-                                                       /* scaffoldState
-                                                            .snackbarHostState
-                                                            .showSnackbar(
-                                                                message = item.title ?: "",
-                                                                actionLabel = "Hide",
-                                                                duration = SnackbarDuration.Short
-                                                            )*/
+                                                        /* scaffoldState
+                                                             .snackbarHostState
+                                                             .showSnackbar(
+                                                                 message = item.title ?: "",
+                                                                 actionLabel = "Hide",
+                                                                 duration = SnackbarDuration.Short
+                                                             )*/
                                                     }
                                                 })
                                             }

@@ -11,6 +11,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Named
 
+const val PAGE_SIZE = 30
 
 class RecipeListViewModel
 @ViewModelInject constructor(
@@ -22,6 +23,8 @@ class RecipeListViewModel
     val selectedCategory = mutableStateOf<FoodCategory?>(null)
     var categoryScrollPosition = 0f
     var loading = mutableStateOf(false)
+    val page = mutableStateOf(1)
+    private var recipeListScrollPosition = 0
 
     init {
         newSearch()
@@ -42,8 +45,49 @@ class RecipeListViewModel
         }
     }
 
+    fun nextPage() {
+        // prevent duplicate event due to recompose happening to quickly
+        viewModelScope.launch {
+            if ((recipeListScrollPosition + 1) >= (page.value * PAGE_SIZE)) {
+                loading.value = true
+                incrementPage()
+                //show loading
+                delay(1000)
+                if (page.value > 1) {
+                    val results = recipeRepository.getRecipes(
+                        token = token,
+                        query = query.value,
+                        page = page.value
+                    )
+                    appendRecipeList(results)
+                }
+                loading.value = false
+            }
+        }
+    }
+
+    /*
+    * Append new recipes to the current recipe list
+    * */
+    private fun appendRecipeList(newRecipe: List<Recipe>) {
+        val current = ArrayList(recipes.value)
+        current.addAll(newRecipe)
+        recipes.value = current
+    }
+
+
+    private fun incrementPage() {
+        page.value = page.value + 1
+    }
+
+    fun onChangeRecipeScrollPosition(position: Int) {
+        recipeListScrollPosition = position
+    }
+
     private fun resetSearchState() {
         recipes.value = listOf()
+        page.value = 1
+        onChangeRecipeScrollPosition(0)
         if (selectedCategory.value?.value != query.value) {
             clearSelectedCategory()
         }
