@@ -118,7 +118,7 @@ fun SearchTextField(
         ),
         onImeActionPerformed = onImeActionPerformed,
         leadingIcon = { Icon(Icons.Filled.Search) },
-        textStyle = MaterialTheme.typography.button,
+        textStyle =  TextStyle(color = MaterialTheme.colors.onSurface),
         backgroundColor = MaterialTheme.colors.surface
     )
 }
