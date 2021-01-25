@@ -1,13 +1,11 @@
 package com.arindom.recepieapp.presentation.view.recipelist
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.*
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
@@ -16,26 +14,19 @@ import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.findNavController
+import androidx.navigation.fragment.findNavController
 import com.arindom.recepieapp.R
+import com.arindom.recepieapp.domain.models.Recipe
 import com.arindom.recepieapp.presentation.RecipeApplication
 import com.arindom.recepieapp.presentation.components.*
 import com.arindom.recepieapp.presentation.components.util.SnackbarController
 import com.arindom.recepieapp.presentation.ui.RecipeAppTheme
-import com.arindom.recepieapp.util.TAG
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -104,53 +95,46 @@ class RecipeListFragment : Fragment() {
                                      modifier = Modifier
                                          .padding(10.dp)
                                  )*/
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                ) {
-                                    if (viewModel.loading.value && recipes.isEmpty()) {
-                                        LoadingRecipeListShimmer(imageHeight = 300.dp)
-                                    } else {
-                                        LazyColumn(modifier = Modifier.padding(horizontal = 16.dp)) {
-                                            itemsIndexed(recipes) { index, item ->
-                                                viewModel.onChangeRecipeScrollPosition(index)
-                                                if ((index + 1) >= (page * PAGE_SIZE) && !viewModel.loading.value) {
-                                                    viewModel.onEventTriggered(RecipeListEvent.NextPageEvent)
-                                                }
-
-                                                RecipeCard(recipe = item, onClick = {
-                                                    lifecycleScope.launch {
-                                                        snackbarController.getScope()
-                                                            .launch {
-                                                                snackbarController.showSnackbar(
-                                                                    scaffoldState = scaffoldState,
-                                                                    message = item.title ?: "",
-                                                                    actionLabel = "Hide",
-                                                                )
-                                                            }
-                                                        /* scaffoldState
-                                                             .snackbarHostState
-                                                             .showSnackbar(
-                                                                 message = item.title ?: "",
-                                                                 actionLabel = "Hide",
-                                                                 duration = SnackbarDuration.Short
-                                                             )*/
-                                                    }
-                                                })
-                                            }
-                                        }
+                                RecipeList(
+                                    recipes = recipes,
+                                    page = page,
+                                    scaffoldState = scaffoldState,
+                                    isLoading = viewModel.loading.value,
+                                    onChangeRecipeScrollPosition = viewModel::onChangeRecipeScrollPosition,
+                                    onEventTriggered = viewModel::onEventTriggered,
+                                    onListItemSelected = { recipe ->
+                                        onRecipeSelected(recipe, scaffoldState)
                                     }
-                                    CircularIndeterminateProgressbar(isDisplayed = viewModel.loading.value)
-                                    SnackbarHostDemo(
-                                        modifier = Modifier.align(Alignment.BottomCenter),
-                                        snackbarHostState = scaffoldState.snackbarHostState
-                                    )
-                                }
+                                )
                             }
                         }
                     }
                 }
             }
+    }
+
+    private fun onRecipeSelected(recipe: Recipe, scaffoldState: ScaffoldState) {
+        if (recipe.id != null) {
+            val bundle = Bundle()
+            bundle.putInt("recipeId", recipe.id)
+            findNavController().navigate(R.id.viewRecipe, bundle)
+        } else {
+            snackbarController.getScope().launch {
+                snackbarController.showSnackbar(
+                    scaffoldState = scaffoldState,
+                    message = "Recipe Error",
+                    actionLabel = "Ok",
+                )
+            }
+        }
+        /* snackbarController.getScope()
+                            .launch {
+                               snackbarController.showSnackbar(
+                                     scaffoldState = scaffoldState,
+                                     message = recipe.title ?: "",
+                                     actionLabel = "Hide",
+                                 )
+                            }*/
     }
 }
 
