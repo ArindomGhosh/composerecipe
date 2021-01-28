@@ -68,7 +68,7 @@ class RecipeListViewModel
                 when (recipeListEvent) {
                     RecipeListEvent.NewSearchEvent -> newSearch()
                     RecipeListEvent.NextPageEvent -> nextPage()
-                    RecipeListEvent.RestoreStateEvent -> TODO()
+                    RecipeListEvent.RestoreStateEvent -> restoreState()
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "launchJob: Exception: ${e}, ${e.cause}")
