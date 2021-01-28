@@ -51,7 +51,7 @@ class RecipeListFragment : Fragment() {
             .apply {
                 setContent {
                     RecipeAppTheme(application.isDarkTheme.value) {
-                        val recipes = viewModel.recipes.value
+                        val recipesUiState = viewModel.recipesUiState.value
                         val scaffoldState = rememberScaffoldState()
                         val page = viewModel.page.value
                         Scaffold(
@@ -96,10 +96,9 @@ class RecipeListFragment : Fragment() {
                                          .padding(10.dp)
                                  )*/
                                 RecipeList(
-                                    recipes = recipes,
+                                    recipeUiState = recipesUiState,
                                     page = page,
                                     scaffoldState = scaffoldState,
-                                    isLoading = viewModel.loading.value,
                                     onChangeRecipeScrollPosition = viewModel::onChangeRecipeScrollPosition,
                                     onEventTriggered = viewModel::onEventTriggered,
                                     onListItemSelected = { recipe ->

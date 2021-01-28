@@ -1,6 +1,5 @@
 package com.arindom.recepieapp.presentation.components
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollableColumn
 import androidx.compose.foundation.layout.*
@@ -9,37 +8,30 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import com.arindom.recepieapp.R
 import com.arindom.recepieapp.domain.models.Recipe
-import com.arindom.recepieapp.presentation.components.util.SnackbarController
+import com.arindom.recepieapp.presentation.state.UiState
 import com.arindom.recepieapp.util.LoadImage
-import com.arindom.recepieapp.util.TAG
-import kotlinx.coroutines.launch
 
 const val IMAGE_HEIGHT = 260
 
 @Composable
 fun RecipeView(
     modifier: Modifier = Modifier,
-    recipe: Recipe?,
-    isLoading: Boolean,
+    recipeUiState: UiState<Recipe>,
     snackbarAlert: (String, String) -> Unit
 ) {
     Box(modifier = modifier) {
-        if (isLoading) {
+        if (recipeUiState.loading) {
             LoadingRecipeShimmer(imageHeight = 300.dp)
         } else {
-            if (recipe != null) {
-                RecipeDetails(recipe = recipe)
-            } else snackbarAlert("An Error occurred", "Ok")
+            recipeUiState.data?.let {
+                RecipeDetails(recipe = it)
+            } ?: snackbarAlert("An Error occurred", "Ok")
         }
-        CircularIndeterminateProgressbar(isDisplayed = isLoading)
+        CircularIndeterminateProgressbar(isDisplayed = recipeUiState.loading)
     }
 }
 

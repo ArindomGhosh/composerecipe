@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.arindom.recepieapp.domain.models.Recipe
+import com.arindom.recepieapp.presentation.state.UiState
 import com.arindom.recepieapp.presentation.view.recipelist.PAGE_SIZE
 import com.arindom.recepieapp.presentation.view.recipelist.RecipeListEvent
 
@@ -18,10 +19,9 @@ import com.arindom.recepieapp.presentation.view.recipelist.RecipeListEvent
 @Composable
 fun RecipeList(
     modifier: Modifier = Modifier,
-    recipes: List<Recipe>,
+    recipeUiState: UiState<List<Recipe>>,
     page: Int,
     scaffoldState: ScaffoldState,
-    isLoading: Boolean,
     onChangeRecipeScrollPosition: (Int) -> Unit,
     onEventTriggered: (RecipeListEvent) -> Unit,
     onListItemSelected: (Recipe) -> Unit = {}
@@ -30,13 +30,13 @@ fun RecipeList(
         modifier = modifier
             .fillMaxWidth()
     ) {
-        if (isLoading && recipes.isEmpty()) {
+        if (recipeUiState.loading && recipeUiState.data.isNullOrEmpty()) {
             LoadingRecipeListShimmer(imageHeight = 300.dp)
         } else {
             LazyColumn(modifier = Modifier.padding(horizontal = 16.dp)) {
-                itemsIndexed(recipes) { index, recipe ->
+                itemsIndexed(recipeUiState.data!!) { index, recipe ->
                     onChangeRecipeScrollPosition(index)
-                    if ((index + 1) >= (page * PAGE_SIZE) && !isLoading) {
+                    if ((index + 1) >= (page * PAGE_SIZE) && !recipeUiState.loading) {
                         onEventTriggered(RecipeListEvent.NextPageEvent)
                     }
 
@@ -46,7 +46,7 @@ fun RecipeList(
                 }
             }
         }
-        CircularIndeterminateProgressbar(isDisplayed = isLoading)
+        CircularIndeterminateProgressbar(isDisplayed = recipeUiState.loading)
         SnackbarHostDemo(
             modifier = Modifier.align(Alignment.BottomCenter),
             snackbarHostState = scaffoldState.snackbarHostState

@@ -7,10 +7,12 @@ import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.arindom.recepieapp.domain.Result
 import com.arindom.recepieapp.domain.models.Recipe
+import com.arindom.recepieapp.presentation.state.UiState
+import com.arindom.recepieapp.presentation.state.copyWithResult
 import com.arindom.recepieapp.repository.RecipeRepository
 import com.arindom.recepieapp.util.TAG
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Named
@@ -22,8 +24,7 @@ class RecipeViewModel @ViewModelInject constructor(
     @Named("auth_token") private val token: String,
     @Assisted private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
-    val recipe = mutableStateOf<Recipe?>(null)
-    val loading = mutableStateOf(false)
+    val recipeUiState = mutableStateOf<UiState<Recipe>>(UiState())
 
     init {
         savedStateHandle.get<Int>(STATE_KEY_RECIPE)?.let { recipeId ->
@@ -46,14 +47,13 @@ class RecipeViewModel @ViewModelInject constructor(
     }
 
     private suspend fun getRecipe(recipeId: Int) {
-        loading.value = true
+        recipeUiState.value = UiState(loading = true)
         delay(1000)
         val result = repository.getRecipe(
             token = token,
             recipeId = recipeId
         )
-        recipe.value = result
-        loading.value = false
+        recipeUiState.value =recipeUiState.value.copyWithResult(result)
         savedStateHandle.set(STATE_KEY_RECIPE, recipeId)
     }
 

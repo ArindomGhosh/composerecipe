@@ -8,7 +8,10 @@ import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.arindom.recepieapp.domain.Result
 import com.arindom.recepieapp.domain.models.Recipe
+import com.arindom.recepieapp.presentation.state.UiState
+import com.arindom.recepieapp.presentation.state.copyWithResult
 import com.arindom.recepieapp.repository.RecipeRepository
 import com.arindom.recepieapp.util.TAG
 import kotlinx.coroutines.delay
@@ -29,11 +32,10 @@ class RecipeListViewModel
     @Named("auth_token") private val token: String,
     @Assisted private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
-    val recipes: MutableState<List<Recipe>> = mutableStateOf(listOf())
+    val recipesUiState: MutableState<UiState<List<Recipe>>> = mutableStateOf(UiState(data = listOf()))
     val query = mutableStateOf("")
     val selectedCategory = mutableStateOf<FoodCategory?>(null)
     var categoryScrollPosition = 0f
-    var loading = mutableStateOf(false)
     val page = mutableStateOf(1)
     private var recipeListScrollPosition = 0
 
@@ -81,16 +83,15 @@ class RecipeListViewModel
 
     // use case 1
     private suspend fun newSearch() {
-        loading.value = true
         resetSearchState()
+        recipesUiState.value = recipesUiState.value.copy(loading = true)
         delay(2000)
         val result = recipeRepository.getRecipes(
             token,
             1,
             query.value
         )
-        recipes.value = result
-        loading.value = false
+        recipesUiState.value = recipesUiState.value.copyWithResult(result)
     }
 
 
@@ -99,7 +100,7 @@ class RecipeListViewModel
         // prevent duplicate event due to recompose happening to quickly
         Log.d(TAG, "recipeListScrollPosition: ${recipeListScrollPosition + 1}")
         if ((recipeListScrollPosition + 1) >= (page.value * PAGE_SIZE)) {
-            loading.value = true
+            recipesUiState.value = recipesUiState.value.copy(loading = true)
             incrementPage()
             //show loading
             delay(1000)
@@ -110,27 +111,35 @@ class RecipeListViewModel
                     query = query.value,
                     page = page.value
                 )
-                appendRecipeList(results)
+                when (results) {
+                    is Result.Failure -> recipesUiState.value = recipesUiState.value.copyWithResult(results)
+                    is Result.Success -> appendRecipeList(results.data)
+                }
             }
-            loading.value = false
         }
     }
 
     private suspend fun restoreState() {
-        loading.value = true
+        recipesUiState.value = recipesUiState.value.copy(loading = true)
         //it should be cached in local db for fetching recipe list
         val result = mutableListOf<Recipe>()
         for (page in 1..page.value) {
-            result.addAll(
-                recipeRepository.getRecipes(
-                    token,
-                    page,
-                    query.value
-                )
+            val results = recipeRepository.getRecipes(
+                token,
+                page,
+                query.value
             )
+            when (results) {
+                is Result.Failure -> {
+                    recipesUiState.value = recipesUiState.value.copyWithResult(results)
+                    break
+                }
+                is Result.Success -> {
+                    result.addAll(results.data)
+                }
+            }
             if (page == this.page.value) {
-                recipes.value = result
-                loading.value = false
+                recipesUiState.value = recipesUiState.value.copyWithResult(Result.Success(result))
             }
         }
     }
@@ -140,9 +149,9 @@ class RecipeListViewModel
     * */
     private fun appendRecipeList(newRecipe: List<Recipe>) {
         Log.d(TAG, "appendRecipeList: ${newRecipe.size}")
-        val current = ArrayList(recipes.value)
+        val current = ArrayList(recipesUiState.value.data)
         current.addAll(newRecipe)
-        recipes.value = current
+        recipesUiState.value = recipesUiState.value.copyWithResult(Result.Success(current))
     }
 
 
@@ -155,7 +164,7 @@ class RecipeListViewModel
     }
 
     private fun resetSearchState() {
-        recipes.value = listOf()
+        recipesUiState.value = UiState(data = listOf())
         page.value = 1
         onChangeRecipeScrollPosition(0)
         if (selectedCategory.value?.value != query.value) {
