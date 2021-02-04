@@ -6,14 +6,15 @@ import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ApplicationComponent
+import dagger.hilt.components.SingletonComponent
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Named
+import javax.inject.Qualifier
 import javax.inject.Singleton
 
 @Module
-@InstallIn(ApplicationComponent::class)
+@InstallIn(SingletonComponent::class)
 object NetworkModule {
 
     @Singleton
@@ -22,13 +23,26 @@ object NetworkModule {
         return RecipeDtoMapper()
     }
 
+    @BaseUrl
     @Singleton
     @Provides
-    fun provideRecipeService(): RecipeService {
+    fun providesBaseUrl():String{
+        return "https://food2fork.ca/api/recipe/"
+    }
+
+    @Singleton
+    @Provides
+    fun providesRetrofit(@BaseUrl baseUrl:String):Retrofit{
         return Retrofit.Builder()
-            .baseUrl("https://food2fork.ca/api/recipe/")
+            .baseUrl(baseUrl)
             .addConverterFactory(GsonConverterFactory.create(GsonBuilder().create()))
             .build()
+    }
+
+    @Singleton
+    @Provides
+    fun provideRecipeService(retrofit: Retrofit): RecipeService {
+        return retrofit
             .create(RecipeService::class.java)
     }
 
@@ -40,3 +54,8 @@ object NetworkModule {
     }
 
 }
+
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class BaseUrl

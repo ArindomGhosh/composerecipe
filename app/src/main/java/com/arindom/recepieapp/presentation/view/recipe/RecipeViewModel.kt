@@ -2,27 +2,27 @@ package com.arindom.recepieapp.presentation.view.recipe
 
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
-import androidx.hilt.Assisted
-import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.arindom.recepieapp.domain.Result
 import com.arindom.recepieapp.domain.models.Recipe
 import com.arindom.recepieapp.presentation.state.UiState
 import com.arindom.recepieapp.presentation.state.copyWithResult
 import com.arindom.recepieapp.repository.RecipeRepository
 import com.arindom.recepieapp.util.TAG
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 import javax.inject.Named
 
 const val STATE_KEY_RECIPE = "recipe.state.recipe.key"
 
-class RecipeViewModel @ViewModelInject constructor(
+@HiltViewModel
+class RecipeViewModel @Inject constructor(
     private val repository: RecipeRepository,
     @Named("auth_token") private val token: String,
-    @Assisted private val savedStateHandle: SavedStateHandle
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     val recipeUiState = mutableStateOf<UiState<Recipe>>(UiState())
 
